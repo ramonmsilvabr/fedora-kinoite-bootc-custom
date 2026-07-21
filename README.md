@@ -1,11 +1,11 @@
-# Imagem do Fedora Silverblue OCI com modificações
+# Imagem do Fedora Kinoite OCI com modificações
 
 Essa imagem pode ser utilizada se desejar uma instalação mais limpa do Fedora sem ter que recorrer a sistemas que trazem várias modificações.
 
 Duas edições principais: 
 
-* `fedora-silverblue-bootc-custom` que **apenas** inclui os drivers Open Source; 
-* `fedora-silverblue-bootc-custom-nvidia-open` que inclui os drivers proprietários da NVIDIA.
+* `fedora-kinoite-bootc-custom` que **apenas** inclui os drivers Open Source; 
+* `fedora-kinoite-bootc-custom-nvidia-open` que inclui os drivers proprietários da NVIDIA.
 
 Canais de atualização:
 |Canal|Versão atual|Recorrência de build|
@@ -18,9 +18,9 @@ Canais de atualização:
     * xpadneo: Xbox Controller Advanced Linux Driver; Repositório terra.
     * nvidia (na edição nvidia-open): NVIDIA Open Kernel Modules; Repositório rpmfusion.
 
-Ambiente Desktop/Compositor Wayland: GNOME Shell/Mutter
+Ambiente Desktop/Compositor Wayland: KDE Plasma/KWin
 
-Imagem base: Fedora Silverblue bootc
+Imagem base: Fedora Kinoite bootc
 
 # Buildar localmente
 
@@ -28,12 +28,12 @@ Imagem base: Fedora Silverblue bootc
 
 ```
 # Clonagem do repositório
-git clone https://github.com/ramonmsilvabr/fedora-silverblue-bootc-custom.git
-cd fedora-silverblue-bootc-custom
+git clone https://github.com/ramonmsilvabr/fedora-kinoite-bootc-custom.git
+cd fedora-kinioite-bootc-custom
 # Apenas drivers Open Source
-sudo podman build --build-arg SECUREBOOT_IGNORE=true -t fedora-silverblue-bootc-custom-nvidia-open . -f nvidia-open/Containerfile
+sudo podman build --build-arg SECUREBOOT_IGNORE=true -t fedora-kinoite-bootc-custom-nvidia-open . -f nvidia-open/Containerfile
 # Com drivers proprietários da NVIDIA
-sudo podman build --build-arg SECUREBOOT_IGNORE=true -t fedora-silverblue-bootc-custom . -f default/Containerfile
+sudo podman build --build-arg SECUREBOOT_IGNORE=true -t fedora-kinoite-bootc-custom . -f default/Containerfile
 ```
 
 * Se precisar da ISO para fazer uma instalação limpa:
@@ -51,15 +51,15 @@ sudo podman run \
     quay.io/centos-bootc/bootc-image-builder:latest \
     --type anaconda-iso \
     --rootfs btrfs \
-    localhost/fedora-silverblue-bootc-custom
+    localhost/fedora-kinoite-bootc-custom
 ```
 # Uso da imagem no registro do Github Actions
 
 * Se você usa Secure Boot, importe o certificado antes de instalar:
 
     ```
-    git clone https://github.com/ramonmsilvabr/fedora-silverblue-bootc-custom.git
-    cd fedora-silverblue-bootc-custom/secureboot
+    git clone https://github.com/ramonmsilvabr/fedora-kinoite-bootc-custom.git
+    cd fedora-kinoite-bootc-custom/secureboot
     sudo mokutil -i MOK.der
     #  Importe a chave no MOK com uma senha de sua preferência, digite-a duas vezes
     ```
@@ -83,7 +83,7 @@ sudo podman run \
         quay.io/centos-bootc/bootc-image-builder:latest \
         --type anaconda-iso \
         --rootfs btrfs \
-        ghcr.io/ramonmsilvabr/fedora-silverblue-bootc-custom:<versão>
+        ghcr.io/ramonmsilvabr/fedora-kinoite-bootc-custom:<versão>
     ```
 
     * Imagem que inclui o driver proprietário da NVIDIA:
@@ -101,17 +101,17 @@ sudo podman run \
         quay.io/centos-bootc/bootc-image-builder:latest \
         --type anaconda-iso \
         --rootfs btrfs \
-        ghcr.io/ramonmsilvabr/fedora-silverblue-bootc-custom-nvidia-open:<version>
+        ghcr.io/ramonmsilvabr/fedora-kinoite-bootc-custom-nvidia-open:<version>
     ```
 
 * Se você já estiver em qualquer edição atômica do Fedora ou derivados, você pode puxar a imagem direto do registro.
 
     * Edição com drivers da NVIDIA:
     ```
-    sudo bootc switch ghcr.io/ramonmsilvabr/fedora-silverblue-bootc-custom-nvidia-open:<versão>
+    sudo bootc switch ghcr.io/ramonmsilvabr/fedora-kinoite-bootc-custom-nvidia-open:<versão>
     ```
 
     * Edição sem drivers da NVIDIA:
     ```
-    sudo bootc switch ghcr.io/ramonmsilvabr/fedora-silverblue-bootc-custom:<versão>
+    sudo bootc switch ghcr.io/ramonmsilvabr/fedora-kinoite-bootc-custom:<versão>
     ```
