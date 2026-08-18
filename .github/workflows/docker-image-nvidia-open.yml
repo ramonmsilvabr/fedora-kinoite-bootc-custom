@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       fedora_version:
-        description: 'Versão do Fedora Silverblue'
+        description: 'Versão do Fedora Kinoite'
         default: '44'
         required: false
 
