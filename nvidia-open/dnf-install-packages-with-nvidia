@@ -1,13 +1,8 @@
 distrobox
 btrfs-assistant
 podman-compose
-nvtop
-btop
 fastfetch
 rclone
-clamav
-clamav-freshclam
-clamd
 libva-nvidia-driver
 nvidia-container-toolkit
 nvidia-container-toolkit-base
