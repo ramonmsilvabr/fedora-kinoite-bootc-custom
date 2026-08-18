@@ -2,11 +2,11 @@ name: nvidia-open build
 
 on:
   schedule:
-    - cron: '0 6 * * *' # Constrói as 6:00 de segunda
+    - cron: '0 6 * * *' # Constrói as 6:00 da segunda
   workflow_dispatch:
     inputs:
       fedora_version:
-        description: 'Versão do Fedora Kinoite'
+        description: 'Versão do Fedora Silverblue'
         default: '44'
         required: false
 
@@ -17,7 +17,7 @@ env:
 
 jobs:
   build-push:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       SELECTED_VERSION: ${{ github.event.inputs.fedora_version || '44' }}
       DEFAULT_VERSION: '44'
@@ -49,35 +49,54 @@ jobs:
           echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
           echo "versionanddate=${VERSIONANDDATE}"     >> $GITHUB_OUTPUT
           
-      - name: Log into GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login no GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | sudo podman login \
+            -u "${{ github.actor }}" --password-stdin "${{ env.REGISTRY }}"
       
-      - name: Suporte a Secure Boot
+      - name: Clean Podman containers storage
+        run: |
+          sudo podman system prune --all --force
+          sudo rm -rf /var/lib/containers/storage/overlay-containers
+
+      - name: Assinatura  dos módulos  de kernel
         env:
           PRIVATEKEY_BASE64: ${{ secrets.SECURE_BOOT_KEY }}
         run: |
             mkdir -p .anchor
             echo -n "$PRIVATEKEY_BASE64" | base64 --decode > .anchor/MOK.priv
-      
-      - name: Determinar tag de canal
-        id: channel_tag
+            
+      - name: Build da imagem inicial (como root)
         run: |
-          
-          
-      - name: Build and Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./nvidia-open/Containerfile
-          push: true
-          build-args: |
-            FEDORA_VERSION=${{ env.SELECTED_VERSION }}
-          tags: |
+          sudo podman build \
+            --skip-unused-stages=false \
+            --security-opt label=disable \
+            -t "localhost/bootc-raw:latest" \
+            -f ./nvidia-open/Containerfile \
+            -v "$(pwd):/run/src" \
+            --build-arg FEDORA_VERSION=${{ env.SELECTED_VERSION }} \
+            .
+
+      - name: Rechunk via bootc-base-imagectl 
+        run: |
+          sudo podman run --rm --privileged \
+            -v /var/lib/containers:/var/lib/containers \
+            quay.io/fedora/fedora-bootc:44 \
+            /usr/libexec/bootc-base-imagectl rechunk \
+            localhost/bootc-raw:latest \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SELECTED_VERSION }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.versionanddate }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.short_sha }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.channel }}
+
+      - name: Push da tag principal otimizada
+        run: sudo podman push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.SELECTED_VERSION }}"
+
+      - name: Aplicar demais tags e push
+        run: |
+          REGISTRY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          SOURCE="${REGISTRY_IMAGE}:${{ env.SELECTED_VERSION }}"
+
+          for TAG in "${{ steps.meta.outputs.versionanddate }}" \
+               "${{ steps.meta.outputs.short_sha }}" \
+               "${{ steps.meta.outputs.channel }}"; do
+            sudo podman tag "$SOURCE" "${REGISTRY_IMAGE}:${TAG}"
+            sudo podman push "${REGISTRY_IMAGE}:${TAG}"
+          done
